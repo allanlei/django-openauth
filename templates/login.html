@@ -1,0 +1,17 @@
+<form method="POST" action="{% url openid_login %}">
+    {% csrf_token %}
+    <input type="submit" value="Authenticate with OpenID" />
+</form>
+
+
+<form method="POST" action="{% url hybrid_login %}">
+    {% csrf_token %}
+    <input type="submit" value="Authenticate with OpenId + Authorize with OAuth" />
+</form>
+
+
+
+<form method="POST" action="{% url oauth_login %}">
+    {% csrf_token %}
+    <input type="submit" value="Authorize with OAuth" />
+</form>
