@@ -1,9 +1,23 @@
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
 <form method="POST" action="{% url openid_login %}">
     {% csrf_token %}
+    <input type="text" name="domain" value="helveticode.com" />
     <input type="submit" value="Authenticate with OpenID" />
 </form>
 
 
+
+
+
+
+{% comment %}
 <form method="POST" action="{% url hybrid_login %}">
     {% csrf_token %}
     <input type="submit" value="Authenticate with OpenId + Authorize with OAuth" />
@@ -15,3 +29,4 @@
     {% csrf_token %}
     <input type="submit" value="Authorize with OAuth" />
 </form>
+{% endcomment %}

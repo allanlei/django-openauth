@@ -100,10 +100,15 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'example.backends.OpenIDBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
-    '/home/intrepid/Desktop/auth/templates'
+    '/home/intrepid/Desktop/auth/example/templates'
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -113,6 +118,7 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'example',
 #    'django.contrib.sites',
 #    'django.contrib.messages',
 #    'django.contrib.staticfiles'
@@ -141,5 +147,8 @@ LOGGING = {
     }
 }
 
-CONSUMER_KEY = 'dev.donations.rhinoaccounting.com'
-CONSUMER_SECRET ='+LKeKXCge6w45cOzchvw/juD'
+AUTH_PROFILE_MODULE = 'example.UserProfile'
+
+OAUTH_CONSUMER_KEY = 'dev.donations.rhinoaccounting.com'
+OAUTH_CONSUMER_SECRET ='+LKeKXCge6w45cOzchvw/juD'
+OAUTH_SCOPES = ['http://docs.google.com/feeds/']

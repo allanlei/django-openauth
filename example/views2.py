@@ -1,5 +1,13 @@
 from django.views import generic
+#from django.core.urlresolvers import reverse
+#from django.conf import settings
 from django.http import HttpResponseRedirect
+
+#from forms import DomainForm
+
+#from openid.mixins import *
+#from oauth.mixins import *
+
 from django.core.urlresolvers import reverse
 
 from mixins import HostInfoMixin
@@ -26,7 +34,31 @@ class GoogleEndpointsMixin(object):
     oauth_access_endpoint = 'https://www.google.com/accounts/OAuthGetAccessToken'
     oauth_authorization_endpoint = 'https://www.google.com/accounts/OAuthAuthorizeToken'
 
+class OpenIDLoginView(
+        OpenIDAttributeExchangeMixin, 
+        OpenIDLoginMixin,
+        generic.base.TemplateView):
+    template_name = 'login.html'
 
+    def post(self, request, *args, **kwargs):
+        return HttpResponseRedirect(self.get_openid_login_url())
+        
+    openid_ax = [
+        'openid.ax.type.email', 
+        'openid.ax.type.firstname', 
+        'openid.ax.type.lastname', 
+        'openid.ax.type.language', 
+        'openid.ax.type.country',
+    ]
+    
+    def get_openid_realm(self):
+        return '%s://%s' % (self.request.is_secure() and 'https' or 'http', self.request.get_host())
+        
+    def get_openid_endpoint(self):
+        return 'https://www.google.com/a/%(domain)s/o8/ud' % {'domain': 'helveticode.com'}
+        
+    def get_openid_callback_url(self):
+        return self.get_openid_realm() + reverse('openid_callback')
 
 
 class OpenIDLoginCallbackView(OpenIDLoginCallbackMixin, generic.base.View):        
