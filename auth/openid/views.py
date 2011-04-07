@@ -1,7 +1,5 @@
 from django.core.exceptions import ImproperlyConfigured
-
 from auth.oauth.views import OAuthMixin
-
 import urllib
 
 class OpenIDRequestMixin(object):
@@ -47,23 +45,6 @@ class OpenIDRequestMixin(object):
     
     def get_openid_login_url(self):
         return '%s?%s' % (self.get_openid_endpoint(), urllib.urlencode(self.get_openid_kwargs()))
-
-class OpenIDResponseValidatorMixin(object):
-    def is_valid_openid_signature(self):
-        return True
-    
-    def is_valid_openid_discovered_info(self):
-        return True
-        
-    def is_valid_openid_return_to(self):
-        return_to = self.request.GET['openid.return_to']
-        current_request_path = '%s://%s%s' % (self.request.is_secure() and 'https' or 'http', self.request.get_host(), self.request.get_full_path())
-        return current_request_path.startswith(return_to)
-        
-    def is_valid(self):
-        return self.is_valid_openid_return_to() and self.is_valid_openid_discovered_info() and self.is_valid_openid_signature()
-
-
 
 class OpenIDAXRequestMixin(object):
     openid_required_ax = None
@@ -132,3 +113,22 @@ class OpenIDOAuthRequestMixin(OAuthMixin):
             'openid.ext2.scope': ' '.join(self.get_oauth_scopes()),
         })
         return kwargs
+
+
+class OpenIDResponseValidatorMixin(object):
+    def is_valid_openid_mode(self):
+        return self.request.GET['openid.mode'] == 'id_res'
+        
+    def is_valid_openid_signature(self):
+        return True
+    
+    def is_valid_openid_discovered_info(self):
+        return True
+        
+    def is_valid_openid_return_to(self):
+        return_to = self.request.GET['openid.return_to']
+        current_request_path = '%s://%s%s' % (self.request.is_secure() and 'https' or 'http', self.request.get_host(), self.request.get_full_path())
+        return current_request_path.startswith(return_to)
+        
+    def is_valid(self):
+        return self.is_valid_openid_mode() and self.is_valid_openid_return_to() and self.is_valid_openid_discovered_info() and self.is_valid_openid_signature()
