@@ -1,0 +1,4 @@
+Helper functions for Django
+
+INSTALL
+    sudo pip install git+https://GITHUB_USERNAME@github.com/simonk/htmlutils.git

@@ -172,7 +172,7 @@ class OAuthAccessTokenMixin(object):
 
     def get_oauth_verifier(self):
         return self.request.GET.get('oauth_verifier', None)
-        
+   
     def get_oauth_access_token(self, token):
         access_token_url = gdata.auth.GenerateOAuthAccessTokenUrl(
             token,

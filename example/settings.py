@@ -100,7 +100,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'auth.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
     '/home/intrepid/Desktop/auth/templates'
@@ -115,10 +115,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
 #    'django.contrib.sites',
 #    'django.contrib.messages',
-#    'django.contrib.staticfiles',
-    
-    'openid',
-    'oauth',
+#    'django.contrib.staticfiles'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -143,9 +140,6 @@ LOGGING = {
         },
     }
 }
-
-
-
 
 CONSUMER_KEY = 'dev.donations.rhinoaccounting.com'
 CONSUMER_SECRET ='+LKeKXCge6w45cOzchvw/juD'
