@@ -149,6 +149,6 @@ LOGGING = {
 
 AUTH_PROFILE_MODULE = 'example.UserProfile'
 
-OAUTH_CONSUMER_KEY = 'dev.donations.rhinoaccounting.com'
-OAUTH_CONSUMER_SECRET ='+LKeKXCge6w45cOzchvw/juD'
+OAUTH_CONSUMER_KEY = ''
+OAUTH_CONSUMER_SECRET =''
 OAUTH_SCOPES = ['http://docs.google.com/feeds/']
