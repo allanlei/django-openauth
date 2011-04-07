@@ -31,7 +31,7 @@ packages, data_files = [], []
 root_dir = os.path.dirname(__file__)
 if root_dir != '':
     os.chdir(root_dir)
-django_dir = 'htmlutils'
+django_dir = 'auth'
 
 for dirpath, dirnames, filenames in os.walk(django_dir):
     # Ignore dirnames that start with '.'
@@ -43,7 +43,7 @@ for dirpath, dirnames, filenames in os.walk(django_dir):
         data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
 setup(
-    name = 'htmlutils',
+    name = 'auth',
     version = '0.0.1',
     url = '',
     author = 'Allan Lei',

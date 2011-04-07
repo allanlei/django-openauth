@@ -1,3 +1,2 @@
 include README
 include MANIFEST.in
-recursive-include htmlutils/templates *
