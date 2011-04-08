@@ -49,7 +49,7 @@ setup(
     author = 'Allan Lei',
     author_email = 'allanlei@helveticode.com',
     description = 'Helper functions for Django',
-#    download_url = '',
+    download_url = 'git://github.com/allanlei/auth.git',
 #    license = 'Apache 2.0',
     packages = packages,
     cmdclass = {
