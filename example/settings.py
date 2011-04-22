@@ -102,13 +102,12 @@ MIDDLEWARE_CLASSES = (
 
 AUTHENTICATION_BACKENDS = (
     'example.backends.OpenIDBackend',
-    'django.contrib.auth.backends.ModelBackend',
+#    'django.contrib.auth.backends.ModelBackend',
 )
 
 ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
-    '/home/intrepid/Desktop/auth/example/templates'
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -119,9 +118,6 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'example',
-#    'django.contrib.sites',
-#    'django.contrib.messages',
-#    'django.contrib.staticfiles'
 )
 
 # A sample logging configuration. The only tangible logging

@@ -8,7 +8,7 @@
 
 <form method="POST" action="{% url openid_login %}">
     {% csrf_token %}
-    <input type="text" name="domain" value="helveticode.com" />
+    <input type="text" name="domain" value="helveticode.com" autofocus />
     <input type="submit" value="Authenticate with OpenID" />
 </form>
 

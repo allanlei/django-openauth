@@ -2,13 +2,12 @@ from django.views import generic
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.contrib import messages
-from django.conf import settings
 from django.contrib.auth import authenticate, login
 
 from auth.openid import views
 
 
-class OpenIDLoginView(views.OpenIDAXRequestMixin, views.OpenIDRequestMixin, generic.base.TemplateView):
+class OpenIDView(views.OpenIDRequestMixin, generic.base.TemplateView):
     template_name = 'login.html'
     openid_required_ax = [
         'openid.ax.type.email', 
@@ -17,9 +16,6 @@ class OpenIDLoginView(views.OpenIDAXRequestMixin, views.OpenIDRequestMixin, gene
         'openid.ax.type.language', 
         'openid.ax.type.country',
     ]
-    oauth_consumer_key = settings.OAUTH_CONSUMER_KEY
-    oauth_secret_key = settings.OAUTH_CONSUMER_SECRET
-    oauth_scopes = settings.OAUTH_SCOPES
     
     def get_openid_realm(self):
         return '%s://%s' % (self.request.is_secure() and 'https' or 'http', self.request.get_host())
@@ -28,23 +24,17 @@ class OpenIDLoginView(views.OpenIDAXRequestMixin, views.OpenIDRequestMixin, gene
         return 'https://www.google.com/a/%(domain)s/o8/ud' % {'domain': self.request.POST['domain']}
         
     def get_openid_callback_url(self):
-        return self.get_openid_realm() + reverse('openid_callback')
+        return self.get_openid_realm() + reverse('openid_login')
 
-    def post(self, *args, **kwargs):
-        return HttpResponseRedirect(self.get_openid_login_url())
-
-
-class OpenIDLoginCallbackView(views.OpenIDResponseValidatorMixin, generic.base.TemplateView):
-    template_name = 'login.html'
-    
-    def get(self, request, *args, **kwargs):
-        if self.is_valid():
-            user = authenticate(email=self.request.GET['openid.ext1.value.email'], openid_id=self.request.GET['openid.claimed_id'])
+    def get(self, *args, **kwargs):
+        if 'openid.mode' in self.request.GET:
+            user = authenticate(callback=self.get_openid_callback_url(), openid=dict(self.request.GET.items()))
             if user:
-                login(self.request, user)
+#                login(self.request, user)
                 messages.success(self.request, 'Logged In as %s!' % user)
             else:
                 messages.warning(self.request, 'OpenID log in successful, but Django login failed')
-        else:
-            messages.error(self.request, 'Log in failed') 
-        return super(OpenIDLoginCallbackView, self).get(request, *args, **kwargs)
+        return super(OpenIDView, self).get(self.request, *args, **kwargs)
+        
+    def post(self, *args, **kwargs):
+        return HttpResponseRedirect(self.get_openid_login_url())
