@@ -4,24 +4,20 @@ from django.core.urlresolvers import reverse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 
-from auth.openid import views
+from auth.openid.mixins import OpenIDMixin
 
 
-class OpenIDView(views.OpenIDRequestMixin, generic.base.TemplateView):
+class OpenIDView(OpenIDMixin, generic.base.TemplateView):
     template_name = 'login.html'
-    openid_required_ax = [
-        'openid.ax.type.email', 
-        'openid.ax.type.firstname', 
-        'openid.ax.type.lastname', 
-        'openid.ax.type.language', 
-        'openid.ax.type.country',
-    ]
     
+    def get_openid_domain(self):
+        return self.request.POST['domain']
+        
     def get_openid_realm(self):
         return '%s://%s' % (self.request.is_secure() and 'https' or 'http', self.request.get_host())
         
     def get_openid_endpoint(self):
-        return 'https://www.google.com/a/%(domain)s/o8/ud' % {'domain': self.request.POST['domain']}
+        return 'https://www.google.com/a/%(domain)s/o8/ud' % {'domain': self.get_openid_domain()}
         
     def get_openid_callback_url(self):
         return self.get_openid_realm() + reverse('openid_login')
