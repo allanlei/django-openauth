@@ -41,7 +41,7 @@ class Association(models.Model):
     
     @property
     def secret(self):
-        return base64.b64decode(self.secret)
+        return base64.b64decode(self.secret_key)
     
     @secret.setter
     def secret(self, secret):
@@ -52,5 +52,6 @@ class OpenIDProfile(models.Model):
     claimed_id = models.TextField(max_length=2048, unique=True)
     display_id = models.TextField(max_length=2048, blank=True)
 
+
 from signals import association_associate
-pre_save.connect(association_associate, sender=Association)
+models.signals.pre_save.connect(association_associate, sender=Association)
