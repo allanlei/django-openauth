@@ -3,10 +3,11 @@ from django.db.models import F
 
 from openid.store.nonce import SKEW
 from openid.message import OPENID2_NS, OPENID1_NS
-from openid import cryptutil, oidutil
+from openid import cryptutil
 
 from utils import REQUEST_TYPE
 
+import base64
 import urllib
 import urllib2
 import time
@@ -34,6 +35,9 @@ class NonceManager(models.Manager):
         expired_count = expired.count()
         expired.delete()
         return expired_count
+
+
+
 
 class AssociationManager(models.Manager):
     def clean(self):
@@ -79,13 +83,13 @@ class AssociationManager(models.Manager):
         response_data = dict([tuple(arg.split(':', 1)) for arg in response.split()])
         
         dh_server_public = cryptutil.base64ToLong(response_data['dh_server_public'])
-        enc_mac_key = oidutil.fromBase64(response_data['enc_mac_key'])
+        enc_mac_key = base64.b64decode(response_data['enc_mac_key'])
         
         secret = assoc_session.dh.xorSecret(dh_server_public, enc_mac_key, assoc_session.hash_func)
         
         defaults = {
             'handle': response_data['assoc_handle'],
-            'secret_key': oidutil.toBase64(secret),
+            'secret_key': base64.b64encode(secret),
             'lifetime': int(response_data['expires_in']),
             'assoc_type': response_data['assoc_type'],
         }
