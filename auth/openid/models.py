@@ -21,12 +21,17 @@ class Nonce(models.Model):
         return u'Nonce: %s, %s' % (self.server_url, self.salt)
 
 class Association(models.Model):
+    TYPES = {
+        'HMAC-SHA1': None,
+        'HMAC-SHA256': None,
+    }    
+    
     server_url = models.TextField(max_length=2048)
     handle = models.CharField(max_length=255)
-    secret_key = models.TextField(max_length=255) # Stored base64 encoded
-    issued = models.IntegerField()
-    lifetime = models.IntegerField()
-    assoc_type = models.TextField(max_length=64)
+    secret_key = models.TextField(max_length=255)
+    issued = models.IntegerField(default=time.time)
+    lifetime = models.IntegerField(default=0)
+    assoc_type = models.TextField(max_length=64, choices=tuple([(t, t) for t in TYPES.keys()]))
 
     objects = managers.AssociationManager()
     
@@ -34,10 +39,13 @@ class Association(models.Model):
         ordering = ['-issued']
         
     def __unicode__(self):
-        return u'Association: %s, %s' % (self.server_url, self.handle)
+        return u'%s issued: %s exp:%smin' % (self.server_url, self.issued, self.timeleft()/60)
     
+    def timeleft(self):
+        return int(self.issued) + int(self.lifetime) - int(time.time())
+        
     def is_expired(self):
-        return self.issued < int(time.time()) - self.lifetime
+        return self.timeleft < 0
     
     @property
     def secret(self):
@@ -53,5 +61,5 @@ class OpenIDProfile(models.Model):
     display_id = models.TextField(max_length=2048, blank=True)
 
 
-from signals import association_associate
-models.signals.pre_save.connect(association_associate, sender=Association)
+#from signals import association_associate
+#models.signals.pre_save.connect(association_associate, sender=Association)
