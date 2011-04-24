@@ -61,7 +61,6 @@ class OpenIDMixin(object):
 
     def get_openid_kwargs(self):
         association = Association.objects.get()
-#        association = Association.objects.request(self.get_openid_login_endpoint() + '?be=o8')
 
         kwargs = {
             'be': 'o8',
@@ -79,18 +78,7 @@ class OpenIDMixin(object):
         return kwargs
     
     def get_openid_login_url(self):
-#        session = self.request.session.setdefault('OPENID', {})
-#        consumer = Consumer(session, DjangoOpenIDStore())
-#            
-#        openid_request = consumer.begin(self.get_openid_discovery_endpoint())
         return '%s?%s' % (self.get_openid_login_endpoint(), urllib.urlencode(self.get_openid_kwargs()))
-    
-#    def get_openid_response(self):
-#        session = self.request.session.setdefault('OPENID', {})
-#        consumer = Consumer(session, DjangoOpenIDStore())
-#        openid_response = consumer.complete(dict(self.request.REQUEST.items()), self.request.build_absolute_uri())
-#        
-#        return openid_response
 
 
 class OpenIDAXMixin(object):

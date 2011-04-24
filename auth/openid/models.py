@@ -14,7 +14,7 @@ class Nonce(models.Model):
     timestamp = models.IntegerField()
     salt = models.CharField(max_length=40)
 
-    objects = managers.NonceManager()
+    tokens = managers.NonceManager()
     
     class Meta:
         ordering = ['-timestamp']
@@ -30,12 +30,12 @@ class Association(models.Model):
     
     server_url = models.TextField(max_length=2048)
     handle = models.CharField(max_length=255)
-    secret_key = models.TextField(max_length=255)
+    secret = models.TextField(max_length=255)
     issued = models.IntegerField(default=time.time)
     lifetime = models.IntegerField(default=0)
     assoc_type = models.TextField(max_length=64, choices=tuple([(t, t) for t in TYPES.keys()]))
 
-    objects = managers.AssociationManager()
+    tokens = managers.AssociationManager()
     
     class Meta:
         ordering = ['-issued']
@@ -50,14 +50,12 @@ class Association(models.Model):
         return self.timeleft < 0
     
     @property
-    def secret(self):
-        return self.secret_key
-#        return base64.b64decode(self.secret_key)
+    def secret_key(self):
+        return base64.b64decode(self.secret)
     
-    @secret.setter
-    def secret(self, secret):
-        self.secret_key = secret
-#        self.secret_key = base64.b64encode(secret)
+    @secret_key.setter
+    def secret_key(self, secret):
+        self.secret = base64.b64encode(secret)
     
     def sign(self, message):
         hash_func = None
@@ -67,12 +65,11 @@ class Association(models.Model):
             hash_func = cryptutil.hmacSha256
         secret = base64.b64decode(self.secret_key)
         return hash_func(secret, message)
-        
+    
+    def update(self):
+        pass
+         
 class OpenIDProfile(models.Model):
     user = models.ForeignKey(User)
     claimed_id = models.TextField(max_length=2048, unique=True)
     display_id = models.TextField(max_length=2048, blank=True)
-
-
-#from signals import association_associate
-#models.signals.pre_save.connect(association_associate, sender=Association)

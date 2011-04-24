@@ -12,14 +12,10 @@ openid_patterns = patterns('',
 
 urlpatterns = patterns('',
     url(r'^$', generic.base.RedirectView.as_view(url='/openid/')),
+    
+    
     url(r'^openid/$', include(openid_patterns)),
 #    url(r'^oauth/$', include(oauth_patterns)),
-    
-    
-    
-    
-    
-    
     
     
 #    url(r'^openid/callback/$', views.OpenIDLoginCallbackView.as_view(), name='openid_callback'),
