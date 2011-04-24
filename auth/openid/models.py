@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 from auth.openid import managers
 
-from openid import oidutil, cryptutil, kvform
+from openid import cryptutil
 
 import base64
 import time
@@ -20,6 +20,7 @@ class Nonce(models.Model):
         ordering = ['-timestamp']
         
     def __unicode__(self):
+        return 
         return u'Nonce: %s, %s' % (self.server_url, self.salt)
 
 class Association(models.Model):
