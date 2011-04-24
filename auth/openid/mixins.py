@@ -1,8 +1,8 @@
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth import authenticate
 
-from openid.consumer.consumer import Consumer, SUCCESS, FAILURE, CANCEL
-from django_openid_auth.store import DjangoOpenIDStore
+#from openid.consumer.consumer import Consumer, SUCCESS, FAILURE, CANCEL
+#from django_openid_auth.store import DjangoOpenIDStore
 
 from auth.openid.models import Association
 

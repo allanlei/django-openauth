@@ -31,5 +31,4 @@ class OpenIDView(GoogleOpenIDMixin, OpenIDMixin, generic.base.TemplateView):
         return super(OpenIDView, self).get(self.request, *args, **kwargs)
         
     def post(self, *args, **kwargs):
-#        print 'GET Association'
         return HttpResponseRedirect(self.get_openid_login_url())
