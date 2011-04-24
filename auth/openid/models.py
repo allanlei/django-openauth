@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 
 from auth.openid import managers
 
+from openid import oidutil, cryptutil, kvform
+
 import base64
 import time
 
@@ -49,14 +51,25 @@ class Association(models.Model):
     
     @property
     def secret(self):
-        return base64.b64decode(self.secret_key)
+        return self.secret_key
+#        return base64.b64decode(self.secret_key)
     
     @secret.setter
     def secret(self, secret):
-        self.secret_key = base64.b64encode(secret)
-
+        self.secret_key = secret
+#        self.secret_key = base64.b64encode(secret)
+    
+    def sign(self, message):
+        hash_func = None
+        if self.assoc_type == 'HMAC-SHA1':
+            hash_func = cryptutil.hmacSha1
+        elif self.assoc_type == 'HMAC-SHA256':
+            hash_func = cryptutil.hmacSha256
+        secret = base64.b64decode(self.secret_key)
+        return hash_func(secret, message)
+        
 class OpenIDProfile(models.Model):
-    user = models.ForeignKey(User, related_name='')
+    user = models.ForeignKey(User)
     claimed_id = models.TextField(max_length=2048, unique=True)
     display_id = models.TextField(max_length=2048, blank=True)
 

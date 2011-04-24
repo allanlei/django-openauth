@@ -43,8 +43,12 @@ class AssociationManager(models.Manager):
         expired.delete()
         return expired_count
     
-    def request(self, endpoint, assoc_type='HMAC-SHA1', session_type='HMAC-SHA256', update=True):
-        
+    def request(self, endpoint, assoc_type='HMAC-SHA1', session_type='DH-SHA1', update=True):
+        if assoc_type not in REQUEST_TYPE:
+            raise Exception('Unknown assoc_type')
+        if session_type not in REQUEST_TYPE[assoc_type]:
+            raise Exception('Unknown session_type')
+            
         session_class = REQUEST_TYPE[assoc_type][session_type]
         assoc_session = session_class()
         

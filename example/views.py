@@ -5,9 +5,10 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 
 from auth.openid.mixins import OpenIDMixin
+from auth.google.mixins import GoogleOpenIDMixin
 
 
-class OpenIDView(OpenIDMixin, generic.base.TemplateView):
+class OpenIDView(GoogleOpenIDMixin, OpenIDMixin, generic.base.TemplateView):
     template_name = 'login.html'
     
     def get_openid_domain(self):
@@ -16,21 +17,19 @@ class OpenIDView(OpenIDMixin, generic.base.TemplateView):
     def get_openid_realm(self):
         return '%s://%s' % (self.request.is_secure() and 'https' or 'http', self.request.get_host())
         
-    def get_openid_endpoint(self):
-        return 'https://www.google.com/a/%(domain)s/o8/ud' % {'domain': self.get_openid_domain()}
-        
-    def get_openid_callback_url(self):
+    def get_openid_return_to(self):
         return self.get_openid_realm() + reverse('openid_login')
 
     def get(self, *args, **kwargs):
         if 'openid.mode' in self.request.GET:
-            user = authenticate(callback=self.get_openid_callback_url(), openid=dict(self.request.GET.items()))
+            user = authenticate(return_to=self.get_openid_return_to(), openid=dict(self.request.GET.items()))
             if user:
-#                login(self.request, user)
+                login(self.request, user)
                 messages.success(self.request, 'Logged In as %s!' % user)
             else:
                 messages.warning(self.request, 'OpenID log in successful, but Django login failed')
         return super(OpenIDView, self).get(self.request, *args, **kwargs)
         
     def post(self, *args, **kwargs):
+#        print 'GET Association'
         return HttpResponseRedirect(self.get_openid_login_url())

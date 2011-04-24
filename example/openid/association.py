@@ -475,7 +475,7 @@ class Association(object):
         except KeyError:
             raise ValueError(
                 'Unknown association type: %r' % (self.assoc_type,))
-
+        
         return mac(self.secret, kv)
 
 

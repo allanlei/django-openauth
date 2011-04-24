@@ -3,6 +3,9 @@ from django.contrib.auth import authenticate
 
 from openid.consumer.consumer import Consumer, SUCCESS, FAILURE, CANCEL
 from django_openid_auth.store import DjangoOpenIDStore
+
+from auth.openid.models import Association
+
 import urllib
 
 
@@ -19,7 +22,7 @@ class OpenIDMixin(object):
     openid_realm = None
     openid_discovery_endpoint = None
     openid_login_endpoint = None
-    openid_callback_url = None
+    openid_return_to = None
     
     def get_openid_domain(self):
         if self.openid_domain:
@@ -28,18 +31,18 @@ class OpenIDMixin(object):
             raise ImproperlyConfigured('Provide openid_domain or override get_openid_domain().')
         return domain
         
-    def get_openid_callback_url(self):
-        if self.openid_callback_url:
-            url = self.openid_callback_url
+    def get_openid_return_to(self):
+        if self.openid_return_to:
+            url = self.openid_return_to
         else:
-            raise ImproperlyConfigured('Provide openid_callback_url or override get_openid_callback_url().')
+            raise ImproperlyConfigured('Provide openid_return_to or override get_openid_return_to().')
         return url
     
     def get_openid_discovery_endpoint(self):
         if self.openid_discovery_endpoint:
             url = self.openid_discovery_endpoint
         else:
-            raise ImproperlyConfigured('Provide openid_callback_url or override get_openid_callback_url().')
+            raise ImproperlyConfigured('Provide openid_return_to or override get_openid_return_to().')
         return url
         
     def get_openid_login_endpoint(self):
@@ -57,11 +60,15 @@ class OpenIDMixin(object):
         return realm
 
     def get_openid_kwargs(self):
+        association = Association.objects.get()
+#        association = Association.objects.request(self.get_openid_login_endpoint() + '?be=o8')
+
         kwargs = {
             'be': 'o8',
             'openid.mode': 'checkid_setup',
             'openid.ns': 'http://specs.openid.net/auth/2.0',
-            'openid.return_to': self.get_openid_callback_url(),
+            'openid.return_to': self.get_openid_return_to(),
+            'openid.assoc_handle': association.handle,            
             'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
             'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
             'openid.realm': self.get_openid_realm(),
@@ -72,18 +79,18 @@ class OpenIDMixin(object):
         return kwargs
     
     def get_openid_login_url(self):
-        session = self.request.session.setdefault('OPENID', {})
-        consumer = Consumer(session, DjangoOpenIDStore())
-            
-        openid_request = consumer.begin(self.get_openid_discovery_endpoint())
+#        session = self.request.session.setdefault('OPENID', {})
+#        consumer = Consumer(session, DjangoOpenIDStore())
+#            
+#        openid_request = consumer.begin(self.get_openid_discovery_endpoint())
         return '%s?%s' % (self.get_openid_login_endpoint(), urllib.urlencode(self.get_openid_kwargs()))
     
-    def get_openid_response(self):
-        session = self.request.session.setdefault('OPENID', {})
-        consumer = Consumer(session, DjangoOpenIDStore())
-        openid_response = consumer.complete(dict(self.request.REQUEST.items()), self.request.build_absolute_uri())
-        
-        return openid_response
+#    def get_openid_response(self):
+#        session = self.request.session.setdefault('OPENID', {})
+#        consumer = Consumer(session, DjangoOpenIDStore())
+#        openid_response = consumer.complete(dict(self.request.REQUEST.items()), self.request.build_absolute_uri())
+#        
+#        return openid_response
 
 
 class OpenIDAXMixin(object):
@@ -136,21 +143,3 @@ class OpenIDAXMixin(object):
             ax_kwargs.update(dict([(ax, ax_mapping[ax]['ns']) for ax in axs]))
             kwargs.update(ax_kwargs)
         return kwargs
-
-
-class OpenIDOAuthRequestTokenMixin(OAuthMixin):
-    def get_openid_kwargs(self):
-        kwargs = super(OpenIDOAuthRequestTokenMixin, self).get_openid_kwargs()
-        kwargs.update({
-            'openid.ns.ext2': 'http://specs.openid.net/extensions/oauth/1.0',
-            'openid.ext2.consumer': self.get_oauth_consumer_key(),
-            'openid.ext2.scope': ' '.join(self.get_oauth_scopes()),
-        })
-        return kwargs
-        
-class GoogleOpenIDMixin(object):
-    def get_openid_discovery_endpoint(self):
-        return 'https://www.google.com/accounts/o8/site-xrds?hd=%(domain)s' % {'domain': self.get_openid_domain()}
-        
-    def get_openid_login_endpoint(self):
-        return 'https://www.google.com/a/%(domain)s/o8/ud' % {'domain': self.get_openid_domain()}
