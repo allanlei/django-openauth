@@ -39,8 +39,8 @@ class Nonce(models.Model):
 
 class Association(models.Model):
     TYPES = {
-        'HMAC-SHA1': None,
-        'HMAC-SHA256': None,
+        'HMAC-SHA1': cryptutil.hmacSha1,
+        'HMAC-SHA256': cryptutil.hmacSha256,
     }    
     
     server_url = models.TextField(max_length=2048, db_index=True)
@@ -73,11 +73,7 @@ class Association(models.Model):
         self.secret = base64.b64encode(secret)
     
     def sign(self, message):
-        hash_func = None
-        if self.assoc_type == 'HMAC-SHA1':
-            hash_func = cryptutil.hmacSha1
-        elif self.assoc_type == 'HMAC-SHA256':
-            hash_func = cryptutil.hmacSha256
+        hash_func = self.TYPES[self.assoc_type]
         return hash_func(self.secret_key, message)
          
 class OpenIDProfile(models.Model):
