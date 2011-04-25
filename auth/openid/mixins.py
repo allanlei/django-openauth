@@ -69,7 +69,6 @@ class OpenIDMixin(object):
         association = self.get_openid_association()
         
         kwargs = {
-            'be': 'o8',
             'openid.mode': 'checkid_setup',
             'openid.ns': 'http://specs.openid.net/auth/2.0',
             'openid.return_to': '%s?%s' % (self.get_openid_return_to(), urllib.urlencode({'nonce': self.get_openid_nonce()})),
