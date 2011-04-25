@@ -41,8 +41,4 @@ class OpenIDBackend(object):
             raise OpenIDValidationError('Signature does not match!')
         
     def authenticate(self, return_to=None, openid=None):
-        try:
-            self.validate(return_to, openid)
-        except OpenIDValidationError, err:
-            return None
-        return user
+        self.validate(return_to, openid)

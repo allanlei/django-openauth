@@ -58,16 +58,20 @@ class OpenIDMixin(object):
         else:
             raise ImproperlyConfigured('Provide openid_realm or override get_openid_realm.')
         return realm
-
+    
+    def get_openid_association(self):
+        association, created = Association.objects.retrieve_or_generate(self.get_openid_login_endpoint())
+        return association
+        
     def get_openid_kwargs(self):
-        association = Association.tokens.get(server_url=self.get_openid_login_endpoint())
-
+        association = self.get_openid_association()
+        
         kwargs = {
             'be': 'o8',
             'openid.mode': 'checkid_setup',
             'openid.ns': 'http://specs.openid.net/auth/2.0',
             'openid.return_to': self.get_openid_return_to(),
-            'openid.assoc_handle': association.handle,            
+            'openid.assoc_handle': association.handle,      
             'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
             'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
             'openid.realm': self.get_openid_realm(),

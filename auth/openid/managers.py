@@ -5,7 +5,7 @@ from openid.store.nonce import SKEW
 from openid.message import OPENID2_NS, OPENID1_NS
 from openid import cryptutil
 
-from utils import REQUEST_TYPE
+from utils import generate
 
 import base64
 import urllib
@@ -13,7 +13,38 @@ import urllib2
 import time
 
 
-class NonceManager(models.Manager):
+
+class QuerySetManager(models.Manager):
+    def __init__(self, queryset_class=None, *args, **kwargs):
+        super(QuerySetManager, self).__init__(*args, **kwargs)
+        self.queryset_class = queryset_class
+        
+    def get_query_set(self):
+        if self.queryset_class:
+            return self.queryset_class(self.model)
+        return super(QuerySetManager, self).get_query_set()
+            
+    def __getattr__(self, attr, *args):
+        try:
+            return getattr(self.__class__, attr, *args)
+        except AttributeError:
+            return getattr(self.get_query_set(), attr, *args)
+            
+
+class NonceQuerySet(models.query.QuerySet):
+    def clean(self, starting_time=None):
+        if starting_time is None:
+            starting_time = time.time()
+        
+        expired = self.filter(timestamp__lt=starting_time - SKEW)
+        expired_count = expired.count()
+        expired.delete()
+        return expired_count
+    
+class NonceManager(QuerySetManager):
+    def __init__(self, *args, **kwargs):
+        super(NonceManager, self).__init__(queryset_class=NonceQuerySet, *args, **kwargs)
+
     def use(self, server_url, timestamp, salt):
         created = False
         
@@ -26,20 +57,10 @@ class NonceManager(models.Manager):
             salt__exact=salt,
         )
         return created
-    
-    def clean(self, starting_time=None):
-        if starting_time is None:
-            starting_time = time.time()
+
         
-        expired = self.filter(timestamp__lt=starting_time - SKEW)
-        expired_count = expired.count()
-        expired.delete()
-        return expired_count
 
-
-
-
-class AssociationManager(models.Manager):
+class AssociationQuerySet(models.query.QuerySet):        
     def clean(self):
         now = int(time.time())
         expired = self.filter(issued__lt=now-F('lifetime'))
@@ -47,53 +68,34 @@ class AssociationManager(models.Manager):
         expired.delete()
         return expired_count
     
-    
-    def get_or_create(self, endpoint, **kwargs):
+    def renew(self, session_type='DH-SHA1', ns=OPENID2_NS):
+        count = 0
+        for association in self.all():
+            defaults = generate(association.server_url, association.assoc_type, session_type, ns)
+            association.handle = defaults['handle']
+            association.secret_key = defaults['secret_key']
+            association.lifetime = defaults['lifetime']
+            association.assoc_type = defaults['assoc_type']
+            association.save()
+            count = count + 1
+        return count
+        
+class AssociationManager(QuerySetManager):
+    def __init__(self, *args, **kwargs):
+        super(AssociationManager, self).__init__(queryset_class=AssociationQuerySet, *args, **kwargs)
+        
+    def retrieve_or_generate(self, endpoint, valid=True, **kwargs):
         try:
-            return self.get(endpoint=endpoint), False
+            return self.retrieve(endpoint, valid=valid), False
         except self.model.DoesNotExist:
-            return self.create(endpoint=endpoint, **kwargs), True
+            return self.generate(endpoint, **kwargs), True
             
-    def get(self, endpoint, valid=True):
+    def retrieve(self, endpoint, valid=True):
         filters = {}
         if valid:
-            filters['issued__lt'] = int(time.time() - F('lifetime'))
-        return self.get(endpoint=endpoint, **filters)
+            filters['issued__gt'] = int(time.time()) - F('lifetime')
+        return self.get(server_url=endpoint, **filters)
 
-    def create(self, endpoint, assoc_type='HMAC-SHA1', session_type='DH-SHA1', ns=OPENID2_NS):
-        if assoc_type not in REQUEST_TYPE:
-            raise Exception('Unknown assoc_type')
-        if session_type not in REQUEST_TYPE[assoc_type]:
-            raise Exception('Unknown session_type')
-        
-        session_class = REQUEST_TYPE[assoc_type][session_type]
-        assoc_session = session_class()
-        params = {
-            'mode': 'associate',
-            'ns': ns,
-            'assoc_type': assoc_type,
-            'session_type': session_type,
-        }
-        
-        params.update(assoc_session.getRequest())
-        params = dict([('openid.%s' % key, value) for key, value in params.items()])
-        data = urllib2.urlopen(urllib2.Request(endpoint, data=urllib.urlencode(params)))
-        
-        response = data.read(1024 * 1024)
-        response_data = dict([tuple(arg.split(':', 1)) for arg in response.split()])
-        
-        dh_server_public = cryptutil.base64ToLong(response_data['dh_server_public'])
-        enc_mac_key = base64.b64decode(response_data['enc_mac_key'])
-        
-        secret = assoc_session.dh.xorSecret(dh_server_public, enc_mac_key, assoc_session.hash_func)
-        
-        defaults = {
-            'handle': response_data['assoc_handle'],
-            'secret_key': base64.b64encode(secret),
-            'lifetime': int(response_data['expires_in']),
-            'assoc_type': response_data['assoc_type'],
-        }
-        
-        association = self.model(endpoint=endpoint, **defaults)
-        association.save()
-        return association
+    def generate(self, endpoint, assoc_type='HMAC-SHA1', session_type='DH-SHA1', ns=OPENID2_NS):
+        defaults = generate(endpoint, assoc_type, session_type, ns)
+        return self.create(**defaults)

@@ -10,12 +10,11 @@ import time
 
 
 class Nonce(models.Model):
-    server_url = models.TextField(max_length=2048)
+    server_url = models.TextField(max_length=2048, db_index=True)
     timestamp = models.IntegerField()
     salt = models.CharField(max_length=40)
 
-    objects = models.Manager()
-    tokens = managers.NonceManager()
+    objects = managers.NonceManager()
     
     class Meta:
         ordering = ['-timestamp']
@@ -30,15 +29,14 @@ class Association(models.Model):
         'HMAC-SHA256': None,
     }    
     
-    server_url = models.TextField(max_length=2048)
-    handle = models.CharField(max_length=255)
-    secret = models.TextField(max_length=255)
+    server_url = models.TextField(max_length=2048, db_index=True)
+    handle = models.CharField(max_length=255, db_index=True)
+    secret = models.TextField(max_length=255, blank=False)
     issued = models.IntegerField(default=time.time)
     lifetime = models.IntegerField(default=0)
     assoc_type = models.TextField(max_length=64, choices=tuple([(t, t) for t in TYPES.keys()]))
 
-    objects = models.Manager()
-    tokens = managers.AssociationManager()
+    objects = managers.AssociationManager()
     
     class Meta:
         ordering = ['-issued']
@@ -66,13 +64,9 @@ class Association(models.Model):
             hash_func = cryptutil.hmacSha1
         elif self.assoc_type == 'HMAC-SHA256':
             hash_func = cryptutil.hmacSha256
-        secret = base64.b64decode(self.secret_key)
-        return hash_func(secret, message)
-    
-    def update(self):
-        pass
+        return hash_func(self.secret_key, message)
          
 class OpenIDProfile(models.Model):
     user = models.ForeignKey(User)
     claimed_id = models.TextField(max_length=2048, unique=True)
-    display_id = models.TextField(max_length=2048, blank=True)
+    display_id = models.TextField(max_length=2048, blank=True)  #rename to identity
