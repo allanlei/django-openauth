@@ -14,6 +14,7 @@ class Nonce(models.Model):
     timestamp = models.IntegerField()
     salt = models.CharField(max_length=40)
 
+    objects = models.Manager()
     tokens = managers.NonceManager()
     
     class Meta:
@@ -36,6 +37,7 @@ class Association(models.Model):
     lifetime = models.IntegerField(default=0)
     assoc_type = models.TextField(max_length=64, choices=tuple([(t, t) for t in TYPES.keys()]))
 
+    objects = models.Manager()
     tokens = managers.AssociationManager()
     
     class Meta:

@@ -60,7 +60,7 @@ class OpenIDMixin(object):
         return realm
 
     def get_openid_kwargs(self):
-        association = Association.objects.get()
+        association = Association.tokens.get(server_url=self.get_openid_login_endpoint())
 
         kwargs = {
             'be': 'o8',
