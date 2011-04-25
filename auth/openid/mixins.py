@@ -4,8 +4,7 @@ from django.contrib.auth import authenticate
 #from openid.consumer.consumer import Consumer, SUCCESS, FAILURE, CANCEL
 #from django_openid_auth.store import DjangoOpenIDStore
 
-from auth.openid.models import Association
-
+from auth.openid.models import Association, Nonce
 import urllib
 
 
@@ -62,6 +61,9 @@ class OpenIDMixin(object):
     def get_openid_association(self):
         association, created = Association.objects.retrieve_or_generate(self.get_openid_login_endpoint())
         return association
+    
+    def get_openid_nonce(self, identifier=None):
+        return str(Nonce.objects.checkout(identifier or self.get_openid_login_endpoint()))
         
     def get_openid_kwargs(self):
         association = self.get_openid_association()
@@ -70,7 +72,7 @@ class OpenIDMixin(object):
             'be': 'o8',
             'openid.mode': 'checkid_setup',
             'openid.ns': 'http://specs.openid.net/auth/2.0',
-            'openid.return_to': self.get_openid_return_to(),
+            'openid.return_to': '%s?%s' % (self.get_openid_return_to(), urllib.urlencode({'nonce': self.get_openid_nonce()})),
             'openid.assoc_handle': association.handle,      
             'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
             'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
@@ -83,7 +85,6 @@ class OpenIDMixin(object):
     
     def get_openid_login_url(self):
         return '%s?%s' % (self.get_openid_login_endpoint(), urllib.urlencode(self.get_openid_kwargs()))
-
 
 class OpenIDAXMixin(object):
     openid_required_ax = None

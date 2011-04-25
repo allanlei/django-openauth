@@ -1,16 +1,19 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
 
 from auth.openid import managers
 
 from openid import cryptutil
 
+import hashlib
 import base64
 import time
 
 
 class Nonce(models.Model):
-    server_url = models.TextField(max_length=2048, db_index=True)
+    EXPIRES = 60 * 10
+    identifier = models.TextField(max_length=2048, db_index=True)
     timestamp = models.IntegerField()
     salt = models.CharField(max_length=40)
 
@@ -18,10 +21,21 @@ class Nonce(models.Model):
     
     class Meta:
         ordering = ['-timestamp']
-        
+
     def __unicode__(self):
-        return 
-        return u'Nonce: %s, %s' % (self.server_url, self.salt)
+        return self.get_hash()
+    
+    def is_expired(self):
+        return self.timestamp + self.EXPIRES < time.time()
+        
+    def get_hash(self):
+        h = hashlib.sha1()
+        h.update(str(self.pk))
+        h.update(self.identifier)
+        h.update(str(self.timestamp))
+        h.update(self.salt)
+        h.update(settings.SECRET_KEY)
+        return '%s$%s' % (base64.b64encode(h.digest()), self.salt)
 
 class Association(models.Model):
     TYPES = {

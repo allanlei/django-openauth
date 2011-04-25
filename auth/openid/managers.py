@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import F
+from django.contrib.auth.models import get_hexdigest
 
 from openid.store.nonce import SKEW
 from openid.message import OPENID2_NS, OPENID1_NS
@@ -11,6 +12,7 @@ import base64
 import urllib
 import urllib2
 import time
+import random
 
 
 
@@ -29,36 +31,37 @@ class QuerySetManager(models.Manager):
             return getattr(self.__class__, attr, *args)
         except AttributeError:
             return getattr(self.get_query_set(), attr, *args)
-            
 
 class NonceQuerySet(models.query.QuerySet):
-    def clean(self, starting_time=None):
-        if starting_time is None:
-            starting_time = time.time()
+    def clean(self):
+        self.filter(timestamp__lt=int(time.time()) - self.model.EXPIRES).delete()
         
-        expired = self.filter(timestamp__lt=starting_time - SKEW)
-        expired_count = expired.count()
-        expired.delete()
-        return expired_count
-    
 class NonceManager(QuerySetManager):
     def __init__(self, *args, **kwargs):
         super(NonceManager, self).__init__(queryset_class=NonceQuerySet, *args, **kwargs)
 
-    def use(self, server_url, timestamp, salt):
-        created = False
-        
-        if abs(timestamp - time.time()) > SKEW:
-            return False
-        
-        nonce, created = self.get_or_create(
-            server_url__exact=server_url,
-            timestamp__exact=timestamp,
-            salt__exact=salt,
-        )
-        return created
+    def checkout(self, identifier):
+        timestamp = int(time.time())
+        salt = get_hexdigest('sha1', str(random.random()), str(random.random()))[:10]
+        return self.create(identifier=identifier, timestamp=timestamp, salt=salt)
+    
+    def checkin(self, identifier, nonce_string):
+        split = nonce_string.split('$', 1)
+        hashed, salt = split[0], ''.join(split[1:])
+        if hashed and salt:
+            try:
+                nonce = self.get(salt=salt, identifier=identifier)
+                valid = not nonce.is_expired() and nonce.get_hash() == nonce_string
+                nonce.delete()
+                return valid
+            except self.model.DoesNotExist:
+                pass
+        return False
 
-        
+
+
+
+
 
 class AssociationQuerySet(models.query.QuerySet):        
     def clean(self):

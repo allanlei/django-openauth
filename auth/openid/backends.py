@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
-from auth.openid.exceptions import OpenIDValidationError
-from auth.openid.models import Association, OpenIDProfile
+from auth.openid.models import Association, OpenIDProfile, Nonce
+
 from openid import kvform
 import base64
 
@@ -17,28 +18,32 @@ class OpenIDBackend(object):
         except User.DoesNotExist:
             return None
     
-    def validate(self, return_to, openid={}):
+    def validate(self, return_to, openid={}, ax_data=None):
         if return_to is None:
-            raise OpenIDValidationError('No return_to specified')
+            raise ValidationError('No return_to specified')
         if 'openid.return_to' not in openid:
-            raise OpenIDValidationError('openid.return_to not in response')
-        if return_to != openid['openid.return_to']:
-            raise OpenIDValidationError('The specified return_to did not match the openid.return_to in the response.')
+            raise ValidationError('openid.return_to not in response')
+        if not openid['openid.return_to'].startswith(return_to):
+            raise ValidationError('The specified return_to did not match the openid.return_to in the response.')
         if openid.get('openid.mode', None) != 'id_res':
-            raise OpenIDValidationError('openid process cancelled or invalid')
+            raise ValidationError('openid process cancelled or invalid')
         if 'openid.signed' not in openid or 'openid.sig' not in openid:
-            raise OpenIDValidationError('No openid signature present')
-        
+            raise ValidationError('No openid signature present')        
+        if 'nonce' not in openid or not Nonce.objects.checkin(openid['openid.op_endpoint'].split('?')[0], openid['nonce']):
+            raise ValidationError('Nonce did not validate! Possibility of replay attack')
+        if ax_data:
+            pass
+            
         signing_pairs = []
         for field in openid['openid.signed'].split(','):
             if 'openid.%s' % field not in openid:
-                raise OpenIDValidationError('Signature does not match.')
+                raise ValidationError('Signature does not match.')
             else:
                 signing_pairs.append((field, openid['openid.%s' % field]))
 
         association = Association.objects.get(handle=openid['openid.assoc_handle'])
         if base64.b64encode(association.sign(kvform.seqToKV(tuple(signing_pairs)))) != openid['openid.sig']:
-            raise OpenIDValidationError('Signature does not match!')
+            raise ValidationError('Signature does not match!')
         
-    def authenticate(self, return_to=None, openid=None):
-        self.validate(return_to, openid)
+    def authenticate(self, return_to=None, openid=None, ax_data=None):
+        self.validate(return_to, openid, ax_data)
