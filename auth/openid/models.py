@@ -56,7 +56,7 @@ class Association(models.Model):
         ordering = ['-issued']
         
     def __unicode__(self):
-        return u'%s issued: %s exp:%smin' % (self.server_url, self.issued, self.timeleft()/60)
+        return u'%s exp:%smin' % (self.server_url, self.timeleft()/60)
     
     def timeleft(self):
         return int(self.issued) + int(self.lifetime) - int(time.time())
