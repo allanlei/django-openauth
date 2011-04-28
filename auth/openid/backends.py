@@ -28,7 +28,7 @@ class OpenIDBackend(object):
         if openid.get('openid.mode', None) != 'id_res':
             raise ValidationError('openid process cancelled or invalid')
         if 'openid.signed' not in openid or 'openid.sig' not in openid:
-            raise ValidationError('No openid signature present')        
+            raise ValidationError('No openid signature present')
         if 'nonce' not in openid or not Nonce.objects.checkin(openid['openid.op_endpoint'].split('?')[0], openid['nonce']):
             raise ValidationError('Nonce did not validate! Possibility of replay attack')
         if ax_data:
