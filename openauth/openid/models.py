@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
-from auth.openid import managers
+from openauth.openid import managers
 
 from openid import cryptutil
 

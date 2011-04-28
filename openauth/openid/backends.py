@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from auth.openid.models import Association, OpenIDProfile, Nonce
+from openauth.openid.models import Association, OpenIDProfile, Nonce
 
 from openid import kvform
 import base64

@@ -4,8 +4,8 @@ from django.core.urlresolvers import reverse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 
-from auth.openid.mixins import OpenIDMixin
-from auth.google.mixins import GoogleOpenIDMixin
+from openauth.openid.mixins import OpenIDMixin
+from openauth.google.mixins import GoogleOpenIDMixin
 
 
 class OpenIDView(GoogleOpenIDMixin, OpenIDMixin, generic.base.TemplateView):
