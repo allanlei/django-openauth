@@ -118,7 +118,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'example',
-    'auth.openid',
+    'openauth.openid',
 )
 
 # A sample logging configuration. The only tangible logging

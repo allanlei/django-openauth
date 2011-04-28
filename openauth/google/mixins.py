@@ -1,4 +1,4 @@
-from auth.oauth.mixins import OAuthMixin
+from openauth.oauth.mixins import OAuthMixin
 
 class GoogleOpenIDMixin(OAuthMixin):
     google_openid_oauth = False

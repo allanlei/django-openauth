@@ -43,13 +43,13 @@ for dirpath, dirnames, filenames in os.walk(django_dir):
         data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
 
 setup(
-    name = 'auth',
+    name = 'django-openauth',
     version = '0.0.1',
     url = '',
     author = 'Allan Lei',
     author_email = 'allanlei@helveticode.com',
     description = 'Helper functions for Django',
-    download_url = 'git://github.com/allanlei/auth.git',
+    download_url = 'git://github.com/allanlei/django-openauth.git',
 #    license = 'Apache 2.0',
     packages = packages,
     cmdclass = {

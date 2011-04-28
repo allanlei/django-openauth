@@ -1,9 +1,9 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from auth.openid.backends import OpenIDBackend as OIDBackend
-from auth.openid.exceptions import OpenIDValidationError
-from auth.openid.models import OpenIDProfile
+from openauth.openid.backends import OpenIDBackend as OIDBackend
+from openauth.openid.exceptions import OpenIDValidationError
+from openauth.openid.models import OpenIDProfile
 
 class OpenIDBackend(OIDBackend):
     def authenticate(self, return_to=None, openid=None):
