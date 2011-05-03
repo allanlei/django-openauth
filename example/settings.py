@@ -119,6 +119,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'example',
     'openauth.openid',
+    'openauth.oauth',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -148,4 +149,6 @@ AUTH_PROFILE_MODULE = 'example.UserProfile'
 
 OAUTH_CONSUMER_KEY = ''
 OAUTH_CONSUMER_SECRET =''
-OAUTH_SCOPES = ['http://docs.google.com/feeds/']
+OAUTH_SCOPES = [
+    'http://docs.google.com/feeds/'
+]

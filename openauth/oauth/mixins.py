@@ -4,58 +4,39 @@ import gdata.auth
 from gdata.client import GDClient
 from atom.http import HttpClient
 
-
 class OAuthMixin(object):
+    oauth_token_class = gdata.auth.OAuthToken
     oauth_consumer_key = None
-    oauth_secret_key = None
+    oauth_consumer_secret = None
     oauth_scopes = []
-    oauth_client = None
-    oauth_http_client = None
+    oauth_client_class = GDClient
+    oauth_http_client = HttpClient
     oauth_signature_method = gdata.auth.OAuthSignatureMethod.HMAC_SHA1
     oauth_input_params = None
     oauth_callback_url = None
     oauth_version = '1.0'
-    
-    def get_oauth_version(self):
-        if self.oauth_version:
-            version = self.oauth_version
+
+    def get_oauth_token(self, **kwargs):
+        if self.oauth_token_class:
+            token = self.oauth_token_class(**kwargs)
         else:
-            raise ImproperlyConfigured('Provide oauth_version or override get_oauth_version()')
-        return version
-        
-    def get_oauth_client(self):
-        if self.oauth_client is None:
-            self.oauth_client = GDClient()
-        return self.oauth_client
-        
-    def get_oauth_http_client(self):
-        if self.oauth_http_client is None:
-            self.oauth_http_client = HttpClient()
-        return self.oauth_http_client
-    
-    def get_oauth_input_params(self):
-        if self.oauth_input_params is None:
-            self.oauth_input_params = gdata.auth.OAuthInputParams(
-                self.get_oauth_signature_method(), 
-                self.get_oauth_consumer_key(), 
-                consumer_secret=self.get_oauth_secret_key(),
-            )
-        return self.oauth_input_params
+            raise ImproperlyConfigured('Provide oauth_token_class or override get_oauth_token().')
+        return token
         
     def get_oauth_consumer_key(self):
         if self.oauth_consumer_key:
             key = self.oauth_consumer_key
         else:
-            raise ImproperlyConfigured("No OAuth Consumer key. Provide oauth_consumer_key.")
+            raise ImproperlyConfigured('Provide oauth_consumer_key or override get_oauth_consumer_key().')
         return key
             
-    def get_oauth_secret_key(self):
+    def get_oauth_consumer_secret(self):
         if self.oauth_secret_key:
             key = self.oauth_secret_key
         else:
-            raise ImproperlyConfigured("No OAuth Secret key. Provide oauth_secret_key.")
+            raise ImproperlyConfigured('Provide oauth_secret_key or override get_oauth_consumer_secret().')
         return key
-    
+
     def get_oauth_scopes(self):
         if self.oauth_scopes is not None:
             scopes = list(self.oauth_scopes)
@@ -65,48 +46,100 @@ class OAuthMixin(object):
              raise ImproperlyConfigured('oauth_scopes cannot be empty!')
         return scopes
     
-    def get_oauth_callback_url(self):
-        if self.oauth_callback_url:
-            url = self.oauth_callback_url
-        else:
-            raise ImproperlyConfigured('Provide oauth_callback_url or override get_callback_url()')
-        return url
-
+    def get_oauth_client(self):
+        return self.oauth_client_class()
+        
+    def get_oauth_http_client(self):
+        return self.oauth_http_client()
+        
     def get_oauth_signature_method(self):
         if self.oauth_signature_method:
             method = self.oauth_signature_method
         else:
             raise ImproperlyConfigured('Provide oauth_signature_method or override get_oauth_signature_method()')
         return method
-
-class OAuthUnauthorizedTokenMixin(object):
-    def set_token_secret(self, token):
-        raise ImproperlyConfigured('Implement token secret storage, Must correspond with get_token_secret()')
+    
+    def get_oauth_callback_url(self):
+        if self.oauth_callback_url:
+            url = self.oauth_callback_url
+        else:
+            raise ImproperlyConfigured('Provide oauth_callback_url or override get_oauth_callback_url().')
+        return url
+    
+    def get_oauth_input_params(self):
+        if self.oauth_input_params:
+            params = self.oauth_input_params
+        else:
+            params = gdata.auth.OAuthInputParams(
+                self.get_oauth_signature_method(), 
+                self.get_oauth_consumer_key(), 
+                consumer_secret=self.get_oauth_secret_key(),
+            )
+        return params
         
-    def get_unauthorized_request_token(self):
-        scopes = self.get_oauth_scopes()
+    def get_oauth_callback(self):
         callback = self.get_oauth_callback_url()
         if not callback.startswith('http'):
             raise ImproperlyConfigured('oauth_callback_url needs to be an absolute URL.')
+        return callback
         
-        request_token_url = gdata.auth.GenerateOAuthRequestTokenUrl(
+    def get_oauth_version(self):
+        return self.oauth_version
+
+
+
+
+
+
+class OAuthTokenRequestMixin(object):
+    def get_oauth_request_token_url(self):
+        return gdata.auth.GenerateOAuthRequestTokenUrl(
             self.get_oauth_input_params(), 
             self.get_oauth_scopes(),
             extra_parameters={
-                'oauth_callback': callback,
+                'oauth_callback': self.get_oauth_callback(),
             }
         )
-        response = self.get_oauth_http_client().request('GET', str(request_token_url))
+        
+    def get_token(self):
+        response = self.get_oauth_http_client().request('GET', str(self.get_oauth_request_token_url()))
         if response.status == 200:
-            token = gdata.auth.OAuthToken(
+            token = self.get_oauth_token(
                 scopes=self.get_oauth_scopes(), 
                 oauth_input_params=self.get_oauth_input_params()
             )
             token.set_token_string(response.read())
-            self.set_token_secret(token.secret)
             return token
+    
+    def get_authorization_url(self):
+        print self.get_token()
+        return 'http://www.google.com'
+
+
+
+class OAuthTokenResponseMixin(object):
+    def get_token(self):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             
-class OAuthAuthorizedTokenMixin(object):
+class OAuthAuthorizedTokenMixin2(object):
     oauth_authorization_endpoint = None
     oauth_token_scope_prefix = 'oauth_token_scope'
     
@@ -160,7 +193,7 @@ class OAuthAuthorizedTokenMixin(object):
         return kwargs
 
 
-class OAuthAccessTokenMixin(object):
+class OAuthAccessTokenMixin2(object):
     oauth_access_endpoint = None
     
     def get_oauth_access_endpoint(self):

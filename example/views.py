@@ -7,10 +7,9 @@ from django.contrib.auth import authenticate, login
 from openauth.openid.mixins import OpenIDMixin
 from openauth.google.mixins import GoogleOpenIDMixin
 
+from openauth.oauth.mixins import OAuthMixin, OAuthTokenRequestMixin
 
-class OpenIDView(GoogleOpenIDMixin, OpenIDMixin, generic.base.TemplateView):
-    template_name = 'login.html'
-    
+class OpenIDView(GoogleOpenIDMixin, OpenIDMixin, generic.base.View):
     def get_openid_domain(self):
         return self.request.POST['domain']
         
@@ -28,8 +27,23 @@ class OpenIDView(GoogleOpenIDMixin, OpenIDMixin, generic.base.TemplateView):
                 messages.success(self.request, 'Logged In as %s!' % user)
             else:
                 messages.warning(self.request, 'OpenID log in successful, but Django login failed')
-        return super(OpenIDView, self).get(self.request, *args, **kwargs)
+            return HttpResponseRedirect('/')
         
     def post(self, *args, **kwargs):
         return HttpResponseRedirect(self.get_openid_login_url())
+
+
+
+
+
+class OAuthView(OAuthTokenRequestMixin, OAuthMixin, generic.base.View):
+    oauth_consumer_key = settings.OAUTH_CONSUMER_KEY
+    oauth_consumer_secret = settings.OAUTH_CONSUMER_SECRET
+    oauth_scopes = settings.OAUTH_SCOPES
+    
+    def get(self, *args, **kwargs):
+        return HttpResponseRedirect('/')
+        
+    def post(self, *args, **kwargs):
+        return HttpResponseRedirect(self.get_authorization_url())
         
