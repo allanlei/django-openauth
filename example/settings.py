@@ -148,7 +148,7 @@ LOGGING = {
 AUTH_PROFILE_MODULE = 'example.UserProfile'
 
 OAUTH_CONSUMER_KEY = ''
-OAUTH_CONSUMER_SECRET =''
+OAUTH_CONSUMER_SECRET = ''
 OAUTH_SCOPES = [
     'http://docs.google.com/feeds/'
 ]

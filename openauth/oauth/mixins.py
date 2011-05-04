@@ -31,10 +31,10 @@ class OAuthMixin(object):
         return key
             
     def get_oauth_consumer_secret(self):
-        if self.oauth_secret_key:
-            key = self.oauth_secret_key
+        if self.oauth_consumer_secret:
+            key = self.oauth_consumer_secret
         else:
-            raise ImproperlyConfigured('Provide oauth_secret_key or override get_oauth_consumer_secret().')
+            raise ImproperlyConfigured('Provide oauth_consumer_secret or override get_oauth_consumer_secret().')
         return key
 
     def get_oauth_scopes(self):
@@ -73,7 +73,7 @@ class OAuthMixin(object):
             params = gdata.auth.OAuthInputParams(
                 self.get_oauth_signature_method(), 
                 self.get_oauth_consumer_key(), 
-                consumer_secret=self.get_oauth_secret_key(),
+                consumer_secret=self.get_oauth_consumer_secret(),
             )
         return params
         
@@ -85,6 +85,104 @@ class OAuthMixin(object):
         
     def get_oauth_version(self):
         return self.oauth_version
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class OAuthUnauthorizedTokenMixin(object):
+    oauth_request_endpoint = None
+    
+    def get_oauth_request_endpoint(self):
+        if self.oauth_request_endpoint:
+            url = self.oauth_request_endpoint
+        else:
+            raise ImproperlyConfigured('Provide oauth_request_endpoint or override get_oauth_request_endpoint().')
+        return url
+        
+    def get_oauth_request_token_url(self):
+        return gdata.auth.GenerateOAuthRequestTokenUrl(
+            self.get_oauth_input_params(), 
+            self.get_oauth_scopes(),
+            extra_parameters={
+                'oauth_callback': self.get_oauth_callback(),
+            }
+        )
+        
+    def get_oauth_unauthorized_token(self):
+        response = self.get_oauth_http_client().request('GET', str(self.get_oauth_request_token_url()))
+        if response.status == 200:
+            token = self.get_oauth_token(
+                scopes=self.get_oauth_scopes(), 
+                oauth_input_params=self.get_oauth_input_params()
+            )
+            token.set_token_string(response.read())
+            return token
+        
+        
+        
+        
+        
+        
+
+class OAuthAuthorizedTokenMixin(object):
+    oauth_authorization_endpoint = None
+    
+    def get_oauth_authorization_endpoint(self):
+        if self.oauth_authorization_endpoint:
+            url = self.oauth_authorization_endpoint
+        else:
+            raise ImproperlyConfigured('Provide oauth_authorization_endpoint or override get_oauth_authorization_endpoint().')
+        return url
+    
+    def get_oauth_authorized_token(self):
+        return None
+    
+            return str(gdata.auth.GenerateOAuthAuthorizationUrl(
+                self.get_oauth_unauthorized_token(),
+                authorization_url=self.get_oauth_authorization_endpoint(),
+#                scopes_param_prefix='oauth_token_scope'
+            )
+        )
+        
+class OAuthAccessTokenMixin(object):
+    oauth_access_endpoint = None
+    
+    def get_oauth_access_endpoint(self):
+        if self.oauth_access_endpoint:
+            url = self.oauth_access_endpoint
+        else:
+            raise ImproperlyConfigured('Provide oauth_access_endpoint or override get_oauth_access_endpoint().')
+        return url
+    
+    def get_oauth_access_token(self):
+        return None
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -112,85 +210,44 @@ class OAuthTokenRequestMixin(object):
             return token
     
     def get_authorization_url(self):
-        print self.get_token()
-        return 'http://www.google.com'
-
 
 
 class OAuthTokenResponseMixin(object):
+    
+    def get_oauth_verifier(self):
+        return self.request.GET['oauth_verifier']
+
     def get_token(self):
-        pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-class OAuthAuthorizedTokenMixin2(object):
-    oauth_authorization_endpoint = None
-    oauth_token_scope_prefix = 'oauth_token_scope'
-    
-    def get_oauth_authorization_endpoint(self):
-        if self.oauth_authorization_endpoint:
-            url = self.oauth_authorization_endpoint
-        else:
-            raise ImproperlyConfigured('Provide oauth_authorization_endpoint or override get_oauth_authorization_endpoint()')
-        return url
-    
-    def get_oauth_token_scope_prefix(self):
-        if self.oauth_token_scope_prefix:
-            prefix = self.oauth_token_scope_prefix
-        else:
-            raise ImproperlyConfigured('Provide oauth_token_scope_prefix or override get_oauth_token_scope_prefix()')
-        return prefix
+        authorized_request_token = gdata.auth.OAuthToken(
+            key=self.request.GET['oauth_token'],
+            secret=self.get_token_secret(),
+            scopes=self.get_oauth_scopes(),
+            oauth_input_params=self.get_oauth_input_params()
+        )
         
-    def get_authorization_url(self, token):
-        return str(gdata.auth.GenerateOAuthAuthorizationUrl(
-            token,
-            authorization_url=self.get_oauth_authorization_endpoint(),
-            scopes_param_prefix=self.get_oauth_token_scope_prefix(),
-        ))
-
-    def get_token_key(self):
-        return self.request.GET.get('oauth_token', None)
-    
-    def get_token_secret(self):
-        raise ImproperlyConfigured('Implement token secret storage, Must correspond with get_token_secret()')
-        
-    def get_authorized_request_token(self):
-        key = self.get_token_key()
-        if key:
-            token = gdata.auth.OAuthToken(
-                key=key,
-                secret=self.get_token_secret(),
-                scopes=self.get_oauth_scopes(),
-                oauth_input_params=self.get_oauth_input_params()
-            )
+        access_token_url = gdata.auth.GenerateOAuthAccessTokenUrl(
+            authorized_request_token,
+            self.get_oauth_input_params(),
+            access_token_url=self.get_oauth_access_endpoint(),
+            oauth_version=self.get_oauth_version(),
+            oauth_verifier=self.get_oauth_verifier(),
+        )
+        response = self.http_client.request('GET', str(access_token_url))
+        if response.status == 200:
+            token = gdata.auth.OAuthTokenFromHttpBody(response.read())
+            token.scopes = authorized_request_token.scopes
+            token.oauth_input_params = authorized_request_token.oauth_input_params
             return token
+
+
+
+
+
+
+
             
-    def get_openid_kwargs(self):
-        kwargs = super(OAuthAuthorizedTokenMixin, self).get_openid_kwargs()
-        if self.get_oauth_consumer_key() not in self.get_openid_realm():
-            raise ImproperlyConfigured('oauth_consumer_key(%s) is different than openid_realm(%s). This key will not work.' % (self.get_oauth_consumer_key(), self.get_openid_realm()))
-        kwargs.update({
-            'openid.ns.ext2': 'http://specs.openid.net/extensions/oauth/1.0',
-            'openid.ext2.consumer': self.get_oauth_consumer_key(),
-            'openid.ext2.scope': ' '.join(self.get_oauth_scopes()),
-        })
-        return kwargs
+            
+           
 
 
 class OAuthAccessTokenMixin2(object):

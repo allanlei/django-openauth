@@ -17,3 +17,24 @@ class OAuthProfile(models.Model):
     @property
     def access_token(self):
         return u''
+
+
+
+
+
+class OAuthToken(models.Model):
+    UNAUTHORIZED_REQUEST_TOKEN = 'unauthorized_request_token'
+    AUTHORIZED_REQUEST_TOKEN = 'authorized_request_token'
+    ACCESS_TOKEN = 'access_token'
+    TOKEN_TYPES = [UNAUTHORIZED_REQUEST_TOKEN, AUTHORIZED_REQUEST_TOKEN, ACCESS_TOKEN]
+    
+    token_type = models.CharField(max_length=64, choices=[(token, token) for token in TOKEN_TYPES], default=UNAUTHORIZED_REQUEST_TOKEN)
+    key = models.TextField()
+    secret = models.TextField(blank=True)
+    
+    
+    def token(self):
+        return ''
+    
+    def upgrade(self):
+        return
