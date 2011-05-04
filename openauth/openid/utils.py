@@ -37,7 +37,11 @@ def generate(endpoint, assoc_type='HMAC-SHA1', session_type='DH-SHA1', ns=OPENID
     params.update(assoc_session.getRequest())
     params = dict([('openid.%s' % key, value) for key, value in params.items()])
 
-    data = urllib2.urlopen(urllib2.Request(endpoint, data=urllib.urlencode(params)))
+    try:
+        data = urllib2.urlopen(urllib2.Request(endpoint, data=urllib.urlencode(params)))
+    except HTTPError, err:
+        raise Exception('OpenID: Http404 %s %s' % (endpoint, str(params)))
+        
     response = data.read(1024 * 1024)
     response_data = dict([tuple(arg.split(':', 1)) for arg in response.split()])
         

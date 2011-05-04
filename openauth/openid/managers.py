@@ -6,7 +6,7 @@ from openid.store.nonce import SKEW
 from openid.message import OPENID2_NS, OPENID1_NS
 from openid import cryptutil
 
-from utils import generate
+import utils
 
 import base64
 import urllib
@@ -74,7 +74,7 @@ class AssociationQuerySet(models.query.QuerySet):
     def renew(self, session_type='DH-SHA1', ns=OPENID2_NS):
         count = 0
         for association in self.all():
-            defaults = generate(association.server_url, association.assoc_type, session_type, ns)
+            defaults = utils.generate(association.server_url, association.assoc_type, session_type, ns)
             association.handle = defaults['handle']
             association.secret_key = defaults['secret_key']
             association.lifetime = defaults['lifetime']
@@ -100,5 +100,5 @@ class AssociationManager(QuerySetManager):
         return self.get(server_url=endpoint, **filters)
 
     def generate(self, endpoint, assoc_type='HMAC-SHA1', session_type='DH-SHA1', ns=OPENID2_NS):
-        defaults = generate(endpoint, assoc_type, session_type, ns)
+        defaults = utils.generate(endpoint, assoc_type, session_type, ns)
         return self.create(**defaults)

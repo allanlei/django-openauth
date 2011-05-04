@@ -1,40 +1,29 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+import managers
+
 import datetime
-
-class OAuthProfile(models.Model):
-    user = models.ForeignKey(User)
-    
-    access_key = models.TextField(max_length=2048, unique=True)
-    access_secret= models.TextField(max_length=2048, blank=True)
-    timestamp = models.DateTimeField(default=datetime.datetime.now)
-    expires = models.DateTimeField(null=True)
-    
-    def __unicode__(self):
-        return self.access_token
-    
-    @property
-    def access_token(self):
-        return u''
-
-
-
+import time
 
 
 class OAuthToken(models.Model):
-    UNAUTHORIZED_REQUEST_TOKEN = 'unauthorized_request_token'
-    AUTHORIZED_REQUEST_TOKEN = 'authorized_request_token'
-    ACCESS_TOKEN = 'access_token'
-    TOKEN_TYPES = [UNAUTHORIZED_REQUEST_TOKEN, AUTHORIZED_REQUEST_TOKEN, ACCESS_TOKEN]
+    token = models.CharField(max_length=1024, blank=True)
+    secret = models.CharField(max_length=1024, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
     
-    token_type = models.CharField(max_length=64, choices=[(token, token) for token in TOKEN_TYPES], default=UNAUTHORIZED_REQUEST_TOKEN)
-    key = models.TextField()
-    secret = models.TextField(blank=True)
-    
-    
-    def token(self):
-        return ''
-    
-    def upgrade(self):
-        return
+    def is_valid(self):
+        return False
+        
+
+class OAuthUnauthorizedToken(OAuthToken):
+    objects = managers.OAuthUnauthorizedTokenManager()
+
+class OAuthAuthorizedToken(OAuthToken):
+    objects = managers.OAuthAuthorizedTokenManager()
+
+class OAuthAccessToken(OAuthToken):
+    objects = managers.OAuthAccessTokenManager()
