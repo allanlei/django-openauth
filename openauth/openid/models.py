@@ -27,7 +27,7 @@ class Nonce(models.Model):
     
     def is_expired(self):
         return self.timestamp + self.EXPIRES < time.time()
-        
+
     def get_hash(self):
         h = hashlib.sha1()
         h.update(str(self.pk))
