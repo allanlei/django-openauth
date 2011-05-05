@@ -15,8 +15,6 @@ from mixins import OAuthAuthorizeTokenMixin as GoogleOAuthAuthorizeTokenMixin
 from mixins import OAuthAccessTokenMixin as GoogleOAuthAccessTokenMixin
 
 
-OAUTH_CONSUMER_KEY = ''
-OAUTH_CONSUMER_SECRET =''
 
 consumer = oauth.Consumer(OAUTH_CONSUMER_KEY, OAUTH_CONSUMER_SECRET)
 
@@ -56,7 +54,11 @@ class HybridOpenIDView(
     oauth_consumer_secret = OAUTH_CONSUMER_SECRET
     oauth_consumer = consumer
     
-    google_oauth_scopes = ['http://docs.google.com/feeds/', 'http://www.google.com/calendar/feeds/', 'http://www.google.com/m8/feeds']
+    google_oauth_scopes = [
+        'http://docs.google.com/feeds/', 
+        'http://www.google.com/calendar/feeds/', 
+        'http://www.google.com/m8/feeds'
+    ]
     
     def get_openid_domain(self):
         return self.request.POST['domain']
@@ -65,15 +67,15 @@ class HybridOpenIDView(
         return '%s://%s' % (self.request.is_secure() and 'https' or 'http', self.request.get_host())
         
     def get_openid_return_to(self):
-        return self.get_openid_realm() + reverse('openid:google_apps')
+        return self.get_openid_realm() + reverse('openid:google_apps_hybrid')
 
     def get(self, *args, **kwargs):
         if 'openid.mode' in self.request.GET:
             user = authenticate(return_to=self.get_openid_return_to(), openid=dict(self.request.GET.items()))
             if user:
                 login(self.request, user)
-                print self.get_oauth_access_token()
                 messages.success(self.request, 'Logged In as %s!' % user)
+                messages.success(self.request, self.get_oauth_access_token())
             else:
                 messages.warning(self.request, 'OpenID log in successful, but Django login failed')
             return HttpResponseRedirect('/')
@@ -107,6 +109,9 @@ class OAuthView(
     google_oauth_scopes = ['http://docs.google.com/feeds/', 'http://www.google.com/calendar/feeds/', 'http://www.google.com/m8/feeds']
     google_oauth_callback = 'http://dev.app.rhinoaccounting.com/oauth/googleapps/'
     
+#    def get_oauth_client(self):
+#        return self.get_oauth_consumer_class()(**self.get_oauth_consumer_kwargs())
+        
     def post(self, *args, **kwargs):
         return HttpResponseRedirect(self.get_oauth_authorization_url())
     

@@ -7,6 +7,7 @@ import urllib
 
 
 class OAuthMixin(object):
+    oauth_consumer = None
     oauth_consumer_class = oauth.Consumer
     oauth_client_class = oauth.Client
     oauth_consumer_key = None
@@ -29,8 +30,12 @@ class OAuthMixin(object):
         return key
     
     def get_oauth_consumer(self):
-        return self.get_oauth_consumer_class()(**self.get_oauth_consumer_kwargs())
-    
+        if self.oauth_consumer:
+            consumer = self.oauth_consumer
+        else:
+            consumer = self.get_oauth_consumer_class()(**self.get_oauth_consumer_kwargs())
+        return consumer
+        
     def get_oauth_consumer_class(self):
         if self.oauth_consumer_class:
             consumer = self.oauth_consumer_class
@@ -44,8 +49,8 @@ class OAuthMixin(object):
             'secret': self.get_oauth_consumer_secret(),
         }
     
-    def get_oauth_client(self):
-        return self.get_oauth_client_class()(**self.get_oauth_client_kwargs())
+    def get_oauth_client(self, **kwargs):
+        return self.get_oauth_client_class()(**self.get_oauth_client_kwargs(**kwargs))
     
     def get_oauth_client_class(self):
         if self.oauth_client_class:
@@ -54,10 +59,11 @@ class OAuthMixin(object):
             raise ImproperlyConfigured('Provide oauth_client_class or override get_oauth_client_class().')
         return client
     
-    def get_oauth_client_kwargs(self):
-        return {
+    def get_oauth_client_kwargs(self, **kwargs):
+        kwargs.update({
             'consumer': self.get_oauth_consumer(),
-        }
+        })
+        return kwargs
     
     def get_oauth_signature_method(self):
         if self.oauth_signature_method:
@@ -99,6 +105,7 @@ class OAuthRequestTokenMixin(object):
         )
         resp, content = client.request(url, self.oauth_request_endpoint_method)
         if resp['status'] != '200':
+            print content
             raise Exception('Could not get request token from %s: HTTP %s' % (url, resp['status']))
         token = dict(cgi.parse_qsl(content))
         if 'oauth_token' not in token:
@@ -121,7 +128,6 @@ class OAuthAuthorizeTokenMixin(object):
         return endpoint
         
     def get_oauth_authorization_url(self):
-        
         return '%s?%s' % (self.get_oauth_authorization_endpoint(), urllib.urlencode(self.get_oauth_authorization_url_params()))
 
     def get_oauth_authorization_url_params(self, oauth_token=None):
@@ -161,14 +167,14 @@ class OAuthAccessTokenMixin(object):
             request_token['oauth_token_secret'],
         )
         token.set_verifier(self.get_oauth_verifier())
-        
-        client = oauth.Client(self.get_oauth_consumer(), token)
+        client = self.get_oauth_client(token=token) #oauth.Client(self.get_oauth_consumer(), token)
         url = '%s?%s' % (
             self.get_oauth_access_endpoint(), 
             urllib.urlencode(self.get_oauth_access_endpoint_params())
         )
         resp, content = client.request(url, 'GET')
         if resp['status'] != '200':
+            print content
             raise Exception('Could not get access token from %s: HTTP %s' % (url, resp['status']))
         token = dict(cgi.parse_qsl(content))
 #        if '' in token:
