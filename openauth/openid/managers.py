@@ -14,7 +14,8 @@ import urllib2
 import time
 import random
 
-
+class AssociationCreationError(Exception):
+    pass
 
 class QuerySetManager(models.Manager):
     def __init__(self, queryset_class=None, *args, **kwargs):
@@ -76,7 +77,7 @@ class AssociationQuerySet(models.query.QuerySet):
         for association in self.all():
             defaults = utils.generate(association.server_url, association.assoc_type, session_type, ns)
             association.handle = defaults['handle']
-            association.secret_key = defaults['secret_key']
+            association.secret_key = defaults['secret']
             association.lifetime = defaults['lifetime']
             association.assoc_type = defaults['assoc_type']
             association.save()
@@ -89,15 +90,24 @@ class AssociationManager(QuerySetManager):
         
     def retrieve_or_generate(self, endpoint, valid=True, **kwargs):
         try:
+            self.clean()
+        except:
+            pass
+        try:
             return self.retrieve(endpoint, valid=valid), False
         except self.model.DoesNotExist:
             return self.generate(endpoint, **kwargs), True
             
     def retrieve(self, endpoint, valid=True):
-        filters = {}
+        filters = {
+            'server_url': endpoint,
+        }
         if valid:
             filters['issued__gt'] = int(time.time()) - F('lifetime')
-        return self.get(server_url=endpoint, **filters)
+        try:
+            return self.get(**filters)
+        except self.model.MultipleObjectsReturned:
+            return self.filter(**filters)[0]
 
     def generate(self, endpoint, assoc_type='HMAC-SHA1', session_type='DH-SHA1', ns=OPENID2_NS):
         defaults = utils.generate(endpoint, assoc_type, session_type, ns)
