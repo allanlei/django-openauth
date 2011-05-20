@@ -93,11 +93,12 @@ class AssociationManager(QuerySetManager):
             self.clean()
         except:
             pass
+            
         try:
             return self.retrieve(endpoint, valid=valid), False
         except self.model.DoesNotExist:
             return self.generate(endpoint, **kwargs), True
-            
+
     def retrieve(self, endpoint, valid=True):
         filters = {
             'server_url': endpoint,
