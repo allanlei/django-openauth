@@ -1,5 +1,4 @@
 include README
-include MANIFEST.in
 include LICENSE
 graft openauth
 recursive-include example *.py *.html
