@@ -77,10 +77,14 @@ class OpenIDAuthenticationMixin(object):
                 signing_pairs.append((field, self.request.GET['openid.%s' % field]))
                 
         association = Association.objects.get(handle=self.request.GET['openid.assoc_handle'])
-        return base64.b64encode(association.sign(kvform.seqToKV(tuple(signing_pairs)))) == self.request.GET['openid.sig']
-    
+        valid = base64.b64encode(association.sign(kvform.seqToKV(tuple(signing_pairs)))) == self.request.GET['openid.sig']
+        print 'HACKER!!!'
+        return valid
+        
     def is_openid_nonce_valid(self):
-        return 'nonce' in self.request.GET and Nonce.objects.checkin(self.request.GET['openid.op_endpoint'].split('?')[0], self.request.GET['nonce'])
+        valid = 'nonce' in self.request.GET and Nonce.objects.checkin(self.request.GET['openid.op_endpoint'].split('?')[0], self.request.GET['nonce'])
+        print 'HACKER!!!'
+        return valid
 
     def is_openid_response_valid(self):
         return self.is_openid_return_to_valid() and self.is_openid_mode_valid() and self.is_openid_signature_valid() and self.is_openid_nonce_valid()
