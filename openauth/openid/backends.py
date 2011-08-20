@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models import Q
 
 from openauth.openid.models import OpenIDProfile
 
@@ -24,11 +25,12 @@ class OpenIDBackend(object):
         if email is None or claimed_id is None or identity is None:
             return None
             
+        user = None
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.filter(Q(openidprofile__claimed_id=claimed_id) | Q(email=email)).distinct().get()
         except User.DoesNotExist:
             user = self.create_user(email=email, claimed_id=claimed_id, identity=identity)
         
-        if not OpenIDProfile.objects.filter(user=user, claimed_id=claimed_id).exists():
+        if user and not OpenIDProfile.objects.filter(user=user, claimed_id=claimed_id).exists():
             self.create_openid_profile(user, claimed_id=claimed_id, identity=identity)
         return user
