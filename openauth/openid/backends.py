@@ -1,10 +1,6 @@
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 
-from openauth.openid.models import Association, OpenIDProfile, Nonce
-
-from openid import kvform
-import base64
+from openauth.openid.models import OpenIDProfile
 
 
 class OpenIDBackend(object):
@@ -18,32 +14,21 @@ class OpenIDBackend(object):
         except User.DoesNotExist:
             return None
     
-    def validate(self, return_to, openid={}, ax_data=None):
-        if return_to is None:
-            raise ValidationError('No return_to specified')
-        if 'openid.return_to' not in openid:
-            raise ValidationError('openid.return_to not in response')
-        if not openid['openid.return_to'].startswith(return_to):
-            raise ValidationError('The specified return_to did not match the openid.return_to in the response.')
-        if openid.get('openid.mode', None) != 'id_res':
-            raise ValidationError('openid process cancelled or invalid')
-        if 'openid.signed' not in openid or 'openid.sig' not in openid:
-            raise ValidationError('No openid signature present')
-        if 'nonce' not in openid or not Nonce.objects.checkin(openid['openid.op_endpoint'].split('?')[0], openid['nonce']):
-            raise ValidationError('Nonce did not validate! Possibility of replay attack')
-        if ax_data:
-            pass
-            
-        signing_pairs = []
-        for field in openid['openid.signed'].split(','):
-            if 'openid.%s' % field not in openid:
-                raise ValidationError('Signature does not match.')
-            else:
-                signing_pairs.append((field, openid['openid.%s' % field]))
+    def create_user(self, email=None, identity=None, **kwargs):
+        return User.objects.create(username=identity, email=email)
 
-        association = Association.objects.get(handle=openid['openid.assoc_handle'])
-        if base64.b64encode(association.sign(kvform.seqToKV(tuple(signing_pairs)))) != openid['openid.sig']:
-            raise ValidationError('Signature does not match!')
+    def create_openid_profile(self, user, claimed_id=None, identity=None):
+        return OpenIDProfile.objects.create(user=user, claimed_id=claimed_id, display_id=identity)
         
-    def authenticate(self, return_to=None, openid=None, ax_data=None):
-        self.validate(return_to, openid, ax_data)
+    def authenticate(self, email=None, claimed_id=None, identity=None):
+        if email is None or claimed_id is None or identity is None:
+            return None
+            
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = self.create_user(email=email, claimed_id=claimed_id, identity=identity)
+        
+        if not OpenIDProfile.objects.filter(user=user, claimed_id=claimed_id).exists():
+            self.create_openid_profile(user, claimed_id=claimed_id, identity=identity)
+        return user
