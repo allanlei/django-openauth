@@ -6,35 +6,26 @@ import time
 import urllib
 
 
-class OAuthMixin(object):
+
+class OAuthConsumerMixin(object):
     oauth_consumer = None
     oauth_consumer_class = oauth.Consumer
-    oauth_client_class = oauth.Client
     oauth_consumer_key = None
     oauth_consumer_secret = None
-    oauth_signature_method = oauth.SignatureMethod_HMAC_SHA1
-    oauth_version = '1.0'
-    
+
     def get_oauth_consumer_key(self):
         if self.oauth_consumer_key:
             key = self.oauth_consumer_key
         else:
             raise ImproperlyConfigured('Provide oauth_consumer_key or override get_oauth_consumer_key().')
         return key
-            
+
     def get_oauth_consumer_secret(self):
         if self.oauth_consumer_secret:
             key = self.oauth_consumer_secret
         else:
             raise ImproperlyConfigured('Provide oauth_consumer_secret or override get_oauth_consumer_secret().')
         return key
-    
-    def get_oauth_consumer(self):
-        if self.oauth_consumer:
-            consumer = self.oauth_consumer
-        else:
-            consumer = self.get_oauth_consumer_class()(**self.get_oauth_consumer_kwargs())
-        return consumer
         
     def get_oauth_consumer_class(self):
         if self.oauth_consumer_class:
@@ -42,28 +33,32 @@ class OAuthMixin(object):
         else:
             raise ImproperlyConfigured('Provide oauth_consumer_class or override get_oauth_consumer_class().')
         return consumer
-    
+
     def get_oauth_consumer_kwargs(self):
         return {
             'key': self.get_oauth_consumer_key(),
             'secret': self.get_oauth_consumer_secret(),
         }
-    
-    def get_oauth_client(self, **kwargs):
-        return self.get_oauth_client_class()(**self.get_oauth_client_kwargs(**kwargs))
-    
-    def get_oauth_client_class(self):
-        if self.oauth_client_class:
-            client = self.oauth_client_class
+
+    def get_oauth_consumer(self):
+        if self.oauth_consumer:
+            consumer = self.oauth_consumer
         else:
-            raise ImproperlyConfigured('Provide oauth_client_class or override get_oauth_client_class().')
-        return client
-    
-    def get_oauth_client_kwargs(self, **kwargs):
-        kwargs.update({
-            'consumer': self.get_oauth_consumer(),
-        })
-        return kwargs
+            consumer = self.get_oauth_consumer_class()(**self.get_oauth_consumer_kwargs())
+        return consumer
+
+class OAuthScopesMixin(object):
+    oauth_scopes = None
+
+    def get_oauth_scopes(self):
+        if self.oauth_scopes:
+            scopes = self.oauth_scopes
+        else:
+            raise ImproperlyConfigured('Provide oauth_scopes or override get_oauth_scopes().')
+        return scopes
+
+class OAuthSignatureMixin(object):
+    oauth_signature_method = oauth.SignatureMethod_HMAC_SHA1
     
     def get_oauth_signature_method(self):
         if self.oauth_signature_method:
@@ -71,9 +66,25 @@ class OAuthMixin(object):
         else:
             raise ImproperlyConfigured('Provide oauth_signature_method or override get_oauth_signature_method().')
         return method
-    
-    def get_oauth_version(self):
-        return self.oauth_version or '1.0'
+
+class OAuthClientMixin(object):
+    oauth_client_class = oauth.Client
+
+    def get_oauth_client_class(self):
+        if self.oauth_client_class:
+            client = self.oauth_client_class
+        else:
+            raise ImproperlyConfigured('Provide oauth_client_class or override get_oauth_client_class().')
+        return client
+
+    def get_oauth_client_kwargs(self, **kwargs):
+        kwargs.update({
+            'consumer': self.get_oauth_consumer(),
+        })
+        return kwargs
+
+    def get_oauth_client(self, **kwargs):
+        return self.get_oauth_client_class()(**self.get_oauth_client_kwargs(**kwargs))
 
 
 
@@ -161,7 +172,7 @@ class OAuthAccessTokenMixin(object):
         
     def get_oauth_access_token(self):
         request_token = self.get_oauth_token()
-        
+
         token = oauth.Token(
             request_token['oauth_token'], 
             request_token['oauth_token_secret'],
@@ -177,6 +188,4 @@ class OAuthAccessTokenMixin(object):
             print content
             raise Exception('Could not get access token from %s: HTTP %s' % (url, resp['status']))
         token = dict(cgi.parse_qsl(content))
-#        if '' in token:
-#            raise Exception('Token not found: %s' % token)
         return token

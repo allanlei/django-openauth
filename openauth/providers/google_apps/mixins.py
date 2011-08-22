@@ -25,7 +25,7 @@ class GoogleOpenIDOAuthMixin(object):
         kwargs.update({
             'openid.ns.ext2': 'http://specs.openid.net/extensions/oauth/1.0',
             'openid.ext2.consumer': self.get_oauth_consumer_key(),
-            'openid.ext2.scope': ' '.join(self.get_google_oauth_scopes()),
+            'openid.ext2.scope': ' '.join(self.get_oauth_scopes()),
         })
         return kwargs
 

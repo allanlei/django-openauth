@@ -7,6 +7,9 @@ from openid import kvform
 
 import base64
 import urllib
+import logging
+
+logger = logging.getLogger('openauth.openid')
 
 
 class OpenIDNonceMixin(object):
@@ -58,14 +61,15 @@ class OpenIDLoginMixin(OpenIDAssociationMixin, OpenIDNonceMixin):
     def get_openid_login_url(self):
         return '%s?%s' % (self.get_openid_login_endpoint(), urllib.urlencode(self.get_openid_kwargs()))
 
-class OpenIDAuthenticationMixin(object):
-    def is_openid_return_to_valid(self):
-        return 'openid.return_to' in self.request.GET and self.request.GET['openid.return_to'].startswith(self.get_openid_return_to())
 
-    def is_openid_mode_valid(self):
-        return self.request.GET.get('openid.mode', None) == 'id_res'
 
-    def is_openid_signature_valid(self):
+
+
+
+
+
+class OpenIDSignatureAuthenticationMixin(object):
+    def is_openid_valid(self):
         if 'openid.signed' not in self.request.GET or 'openid.sig' not in self.request.GET:
             return False
             
@@ -78,16 +82,38 @@ class OpenIDAuthenticationMixin(object):
                 
         association = Association.objects.get(handle=self.request.GET['openid.assoc_handle'])
         valid = base64.b64encode(association.sign(kvform.seqToKV(tuple(signing_pairs)))) == self.request.GET['openid.sig']
-        print 'HACKER!!!'
-        return valid
-        
-    def is_openid_nonce_valid(self):
-        valid = 'nonce' in self.request.GET and Nonce.objects.checkin(self.request.GET['openid.op_endpoint'].split('?')[0], self.request.GET['nonce'])
-        print 'HACKER!!!'
-        return valid
+        logger.warning('HACKER!!!')        
+        return valid and super(OpenIDSignatureAuthenticationMixin, self).is_openid_valid()
 
-    def is_openid_response_valid(self):
-        return self.is_openid_return_to_valid() and self.is_openid_mode_valid() and self.is_openid_signature_valid() and self.is_openid_nonce_valid()
+
+class OpenIDNonceAuthenticationMixin(object):
+    def is_openid_valid(self):
+        valid = 'nonce' in self.request.GET and Nonce.objects.checkin(self.request.GET['openid.op_endpoint'].split('?')[0], self.request.GET['nonce'])
+        logger.warning('HACKER!!!')        
+        return valid and super(OpenIDNonceAuthenticationMixin, self).is_openid_valid()
+
+
+class OpenIDAuthenticationMixin(OpenIDSignatureAuthenticationMixin, OpenIDNonceAuthenticationMixin):
+    def is_openid_return_to_valid(self):
+        return 'openid.return_to' in self.request.GET and self.request.GET['openid.return_to'].startswith(self.get_openid_return_to())
+
+    def is_openid_mode_valid(self):
+        return self.request.GET.get('openid.mode', None) == 'id_res'
+    
+    def is_openid_required_kwargs(self):
+        for field in self.request.GET['openid.signed'].split(','):
+            field = 'openid.%s' % field
+            if field not in self.request.GET:
+                return False
+        
+        for key in self.request.GET.keys():
+            key = key.replace('openid.', '')
+            if key not in ['signed', 'sig', 'ns', 'mode'] and key not in self.request.GET['openid.signed']:
+                return False
+        return True
+
+    def is_openid_valid(self):
+        return self.is_openid_required_kwargs() and self.is_openid_return_to_valid() and self.is_openid_mode_valid()
 
 
 class OpenIDAXMixin(object):
@@ -140,11 +166,3 @@ class OpenIDAXMixin(object):
             ax_kwargs.update(dict([(ax, ax_mapping[ax]['ns']) for ax in axs]))
             kwargs.update(ax_kwargs)
         return kwargs
-
-    def is_openid_ax_valid(self):
-        for key, value in self.request.GET.items():
-            print key, value
-        return True
-        
-    def is_openid_response_valid(self):
-        return self.is_openid_ax_valid() and super(OpenIDAXMixin, self).is_openid_response_valid()
