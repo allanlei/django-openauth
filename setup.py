@@ -11,7 +11,7 @@ def find_packages_in(where, **kwargs):
 
 setup(
     name = 'django-openauth',
-    version = '0.1',
+    version = '0.2',
     author = 'Allan Lei',
     author_email = 'allanlei@helveticode.com',
     description = ('OpenID/OAuth for Django'),
