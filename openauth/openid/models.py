@@ -58,6 +58,11 @@ class Association(models.Model):
         hash_func = self.TYPES[self.assoc_type]
         return hash_func(self.secret_key, message)
 
+class OpenIDProfile(models.Model):
+    user = models.ForeignKey(User)
+    claimed_id = models.TextField(max_length=2048, unique=True)
+    display_id = models.TextField(max_length=2048, blank=True)  #rename to identity
+
 
 from django.db.models.signals import pre_save
 from signals import generate_hash, make_association
