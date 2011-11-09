@@ -1,9 +1,8 @@
 from django.views import generic
 from django.http import HttpResponseRedirect
-from django.core.urlresolvers import reverse
 from django.core.exceptions import ImproperlyConfigured
-from django.contrib.auth import authenticate, login
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.conf import settings
 
 from mixins import LoginMixin
 
@@ -44,16 +43,21 @@ class LoginView(LoginMixin, generic.edit.FormView):
     def get_success_url(self):
         return self.get_openid_login_url()
 
-class AuthenticationView(generic.base.RedirectView):
-    unsuccessful_login_url = None
-    success_url = None
+class AuthenticationView(generic.base.View):
+    login_url = settings.LOGIN_URL
+    success_url = settings.LOGIN_REDIRECT_URL
+    permanent = False
     
-    def get_unsucessful_login_url(self):
-        if self.unsuccessful_login_url:
-            url = self.unsuccessful_login_url
-        else:
-            raise ImproperlyConfigured('Provide unsuccessful_login_url')
-        return url
+    def get(self, *args, **kwargs):
+        if self.is_valid_openid_response():
+            return self.openid_response_valid()
+        return self.openid_response_invalid()
+    
+    def openid_response_valid(self):
+        return HttpResponseRedirect(self.get_success_url())
+    
+    def openid_response_invalid(self):
+        return HttpResponseRedirect(self.get_login_url())
 
     def get_success_url(self):
         if self.successful_login_url:
@@ -61,14 +65,18 @@ class AuthenticationView(generic.base.RedirectView):
         else:
             raise ImproperlyConfigured('Provide successful_login_url')
         return url
+        
+    def get_login_url(self):
+        if self.login_url:
+            url = self.login_url
+        else:
+            raise ImproperlyConfigured('Provide login_url')
+        return url
 
     def is_valid_openid_response(self):
         return True
 
     def get_openid_response_data(self):
-        return dict([(key.replace('openid.', ''), val) for key, val in self.request.GET.items() if key.startswith('openid.')])
-
-    def get_redirect_url(self):
-        if self.is_valid_openid_response():
-            return self.get_success_url()
-        return self.get_unsucessful_login_url()
+        if not hasattr(self, 'openid_data'):
+            self.openid_data = dict([(key.replace('openid.', ''), val) for key, val in self.request.GET.items() if key.startswith('openid.')])
+        return self.openid_data
