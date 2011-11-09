@@ -14,7 +14,7 @@ OpenID
 Installation
 -----------
 
-    Currently not on Pypi.  Install using whichever method workss with Github.
+Currently not on Pypi.  Install using whichever method workss with Github.
 
 
 Setup
