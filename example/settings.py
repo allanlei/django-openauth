@@ -12,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'auth.db',                      # Or path to database file if using sqlite3.
+        'NAME': 'default.db',                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -101,7 +101,7 @@ MIDDLEWARE_CLASSES = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'example.backends.OpenIDBackend',
+    'example.backends.ExampleBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -118,8 +118,9 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'example',
+    
     'openauth.openid',
-    'openauth.oauth',
+#    'openauth.oauth',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -145,4 +146,4 @@ LOGGING = {
     }
 }
 
-AUTH_PROFILE_MODULE = 'example.UserProfile'
+#AUTH_PROFILE_MODULE = 'example.UserProfile'
