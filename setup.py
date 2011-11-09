@@ -11,7 +11,7 @@ def find_packages_in(where, **kwargs):
 
 setup(
     name = 'django-openauth',
-    version = '0.3.2',
+    version = '0.3.3',
     author = 'Allan Lei',
     author_email = 'allanlei@helveticode.com',
     description = ('OpenID/OAuth for Django'),
@@ -21,8 +21,7 @@ setup(
     packages=find_packages_in('openauth'),
     long_description=read('README.md'),
     install_requires=[
-        'python-openid>=2.2.5',
-        'oauth2>=1.5.170',
+        'python-openid==2.2.5',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
