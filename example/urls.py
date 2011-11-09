@@ -10,5 +10,5 @@ urlpatterns = patterns('',
     url(r'^accounts/login/authenticate/$', views.AuthenticationView.as_view(), name='authenticate'),
     url(r'^accounts/logout/$', 'django.contrib.auth.views.logout_then_login', name='logout'),
     
-    url(r'^$', login_required(generic.base.TemplateView.as_view(template_name='home.html')), name='home'),
+    url(r'^accounts/profile/$', login_required(generic.base.TemplateView.as_view(template_name='home.html')), name='home'),
 )

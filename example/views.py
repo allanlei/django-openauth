@@ -25,9 +25,6 @@ class LoginView(Extensions, openid.LoginView):
 
 
 class AuthenticationView(Extensions, openid.AuthenticationView):
-    def get_unsucessful_login_url(self):
-        return self.get_login_url()
-
     def get_success_url(self):
         User.objects.get_or_create(username=self.request.GET.get('openid.claimed_id'))      #Fake user creation
         
