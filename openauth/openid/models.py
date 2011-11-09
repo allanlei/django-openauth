@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.crypto import salted_hmac
+from django.contrib.auth.models import User
 
 from managers import NonceManager, AssociationManager
 
