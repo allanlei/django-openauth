@@ -19,7 +19,7 @@ setup(
     keywords = 'openid oauth django',
     url = 'https://github.com/allanlei/django-openauth',
     packages=find_packages_in('openauth'),
-    long_description=read('README'),
+    long_description=read('README.md'),
     install_requires=[
         'python-openid>=2.2.5',
         'oauth2>=1.5.170',
